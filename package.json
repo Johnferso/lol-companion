@@ -1,0 +1,22 @@
+{
+    "name": "lol-companion",
+    "version": "2.0.0",
+    "description": "LoL Companion Overlay - Auto CD Tracker",
+    "main": "src/main.js",
+    "scripts": {
+          "start": "electron .",
+          "build": "electron-builder --win portable"
+    },
+    "devDependencies": {
+          "electron": "^33.0.0",
+          "electron-builder": "^25.0.0"
+    },
+    "build": {
+          "appId": "com.lolcompanion.overlay",
+          "productName": "LoL Companion",
+          "win": { "target": [{ "target": "portable", "arch": ["x64"] }] },
+          "portable": { "artifactName": "LoL-Companion.exe" },
+          "files": ["src/**/*"],
+          "directories": { "output": "dist" }
+    }
+}
