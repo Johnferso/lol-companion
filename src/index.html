@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<title>LoL Companion</title>
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   TEMAS
+═══════════════════════════════════════════════════════════════ */
+:root {
+  --bg: rgba(12, 14, 22, 0.92);
+  --bg-solid: #0c0e16;
+  --bg-panel: rgba(22, 26, 38, 0.85);
+  --bg-elev: rgba(30, 35, 50, 0.95);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text: #e8ecf4;
+  --text-dim: #8892a8;
+  --text-faint: #58617a;
+  --accent: #c89b3c;
+  --accent-dim: #8c6b28;
+  --ok: #4ade80;
+  --warn: #facc15;
+  --bad: #ef4444;
+  --info: #60a5fa;
+  --drake: #ff9a3c;
+  --baron: #a78bfa;
+  --herald: #22d3ee;
+  --grubs: #84cc16;
+}
+.theme-light {
+  --bg: rgba(248, 249, 252, 0.94);
+  --bg-solid: #f8f9fc;
+  --bg-panel: rgba(255, 255, 255, 0.90);
+  --bg-elev: rgba(245, 246, 250, 0.95);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --text: #1a1d28;
+  --text-dim: #565e72;
+  --text-faint: #9aa3b8;
+  --accent: #a87828;
+  --accent-dim: #8c6b28;
+  --ok: #16a34a;
+  --warn: #ca8a04;
+  --bad: #dc2626;
+  --info: #2563eb;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  color: var(--text);
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DRAG BAR
+═══════════════════════════════════════════════════════════════ */
+.drag-bar {
+  -webkit-app-region: drag;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.drag-bar .logo {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+.drag-bar .status {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex: 1;
+}
+.drag-bar .status.ok { color: var(--ok); }
+.drag-bar .status.bad { color: var(--bad); }
+.drag-bar .controls {
+  -webkit-app-region: no-drag;
+  display: flex;
+  gap: 4px;
+}
+.drag-bar .ctrl-btn {
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drag-bar .ctrl-btn:hover {
+  background: var(--border-strong);
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════════════════════ */
+.tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tab {
+  flex: 1;
+  padding: 6px 4px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: rgba(200, 155, 60, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTEÚDO
+═══════════════════════════════════════════════════════════════ */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+}
+.content::-webkit-scrollbar { width: 6px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ENEMY CARD
+═══════════════════════════════════════════════════════════════ */
+.enemy-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+}
+.enemy-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.enemy-champ {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.enemy-level {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+.enemy-ci {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: inherit;
+}
+.enemy-ci.on {
+  background: var(--info);
+  border-color: var(--info);
+  color: #000;
+}
+.enemy-ci:hover { border-color: var(--info); color: var(--info); }
+.enemy-ci.on:hover { background: var(--info); color: #000; }
+
+.death-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bad);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Spells & Ult row */
+.spells-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+.spell-btn {
+  position: relative;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 2px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  overflow: hidden;
+}
+.spell-btn:hover { border-color: var(--accent); }
+.spell-btn.on-cd {
+  background: var(--bad);
+  color: #fff;
+  border-color: transparent;
+}
+.spell-btn.almost {
+  background: var(--warn);
+  color: #000;
+  border-color: transparent;
+}
+.spell-btn.ult { border-color: var(--accent-dim); }
+.spell-btn .lbl {
+  display: block;
+  font-size: 9px;
+  opacity: 0.8;
+  letter-spacing: 0.3px;
+}
+.spell-btn .timer {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+.spell-btn .hk {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 8px;
+  opacity: 0.45;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   OBJECTIVES
+═══════════════════════════════════════════════════════════════ */
+.obj-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.obj-name {
+  flex: 1;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.obj-name.drake { color: var(--drake); }
+.obj-name.baron { color: var(--baron); }
+.obj-name.herald { color: var(--herald); }
+.obj-name.grubs { color: var(--grubs); }
+.obj-timer {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
+.obj-timer.ready { color: var(--ok); }
+.obj-timer.almost { color: var(--warn); }
+.obj-timer.waiting { color: var(--text-faint); }
+.obj-btn {
+  background: var(--accent);
+  border: none;
+  color: #000;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.obj-btn:hover { background: var(--accent-dim); color: #fff; }
+
+/* ═══════════════════════════════════════════════════════════════
+   BANNER (alertas visuais)
+═══════════════════════════════════════════════════════════════ */
+#banner-wrap {
+  position: fixed;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+.banner {
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  animation: banner-in 0.2s ease-out, banner-out 0.4s ease-in 2.6s forwards;
+  white-space: nowrap;
+}
+.banner.ok { background: var(--ok); color: #000; }
+.banner.warn { background: var(--warn); color: #000; }
+.banner.bad { background: var(--bad); color: #fff; }
+.banner.info { background: var(--info); color: #000; }
+@keyframes banner-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes banner-out {
+  to { opacity: 0; transform: translateY(-8px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS
+═══════════════════════════════════════════════════════════════ */
+.settings-section {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  padding: 8px;
+}
+.settings-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  gap: 8px;
+}
+.settings-row label {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex: 1;
+}
+.kb-input {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  width: 110px;
+  text-align: center;
+  cursor: pointer;
+}
+.kb-input.listening {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+.theme-toggle, .sm-btn {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.theme-toggle:hover, .sm-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.sm-btn.primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+.sm-btn.primary:hover { background: var(--accent-dim); color: #fff; }
+.sm-btn.danger:hover {
+  background: var(--bad);
+  color: #fff;
+  border-color: var(--bad);
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100px;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--bg-elev);
+  border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: -4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HISTORY
+═══════════════════════════════════════════════════════════════ */
+.history-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+.match-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  padding: 8px;
+}
+.match-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.match-champs {
+  font-size: 10px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WARDS
+═══════════════════════════════════════════════════════════════ */
+.ward-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.ward-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+.ward-item .ward-type {
+  font-weight: 700;
+  color: var(--info);
+  min-width: 60px;
+}
+.ward-item .ward-timer {
+  flex: 1;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ward-item .ward-timer.almost { color: var(--warn); }
+.ward-item .ward-rm {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 4px;
+}
+.ward-item .ward-rm:hover { color: var(--bad); }
+
+.ward-add {
+  display: flex;
+  gap: 4px;
+}
+.ward-add button {
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MINI MODE
+═══════════════════════════════════════════════════════════════ */
+body.mini .tabs,
+body.mini #panel-objectives,
+body.mini #panel-wards,
+body.mini #panel-settings,
+body.mini #panel-history {
+  display: none !important;
+}
+body.mini .content {
+  padding: 4px;
+}
+body.mini .enemy-card {
+  padding: 3px 4px;
+  margin-bottom: 3px;
+}
+body.mini .enemy-header { margin-bottom: 2px; }
+body.mini .enemy-champ { font-size: 10px; }
+body.mini .enemy-level, body.mini .enemy-ci { display: none; }
+body.mini .spell-btn { font-size: 9px; padding: 2px 1px; }
+body.mini .spell-btn .lbl { font-size: 8px; }
+body.mini .spell-btn .timer { font-size: 10px; }
+body.mini .spell-btn .hk { display: none; }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 30px 10px;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.empty-state strong { color: var(--text-dim); display: block; margin-bottom: 6px; font-size: 12px; }
+</style>
+</head>
+<body class="theme-dark">
+
+<!-- Drag bar -->
+<div class="drag-bar">
+  <span class="logo">LOL.CO</span>
+  <span class="status" id="status">A AGUARDAR...</span>
+  <div class="controls">
+    <button class="ctrl-btn" id="btn-mini" title="Mini mode (Ctrl+Shift+M)">▫</button>
+    <button class="ctrl-btn" id="btn-click-through" title="Click-through (Ctrl+Shift+T)">◇</button>
+    <button class="ctrl-btn" id="btn-close" title="Fechar">✕</button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="tracker">TRACKER</div>
+  <div class="tab" data-tab="objectives">OBJS</div>
+  <div class="tab" data-tab="wards">WARDS</div>
+  <div class="tab" data-tab="history">HIST</div>
+  <div class="tab" data-tab="settings">CONF</div>
+</div>
+
+<!-- Conteúdo -->
+<div class="content">
+  <div class="tab-panel active" id="panel-tracker">
+    <div id="enemies-list">
+      <div class="empty-state">
+        <strong>À espera da partida...</strong>
+        Abre o LoL e entra numa partida para começar a auto-detecção.
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-objectives">
+    <div id="objs-list"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-wards">
+    <div class="ward-list" id="wards-list"></div>
+    <div class="ward-add">
+      <button class="sm-btn primary" onclick="addWard('Ward', 90)">+ Ward 90s</button>
+      <button class="sm-btn primary" onclick="addWard('Control', 0)">+ Control</button>
+      <button class="sm-btn primary" onclick="addWard('Trinket', 120)">+ Trinket 120s</button>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-history">
+    <div id="history-list">
+      <div class="history-empty">Sem partidas guardadas ainda.</div>
+    </div>
+    <div style="display: flex; gap: 4px; margin-top: 6px;">
+      <button class="sm-btn" onclick="refreshHistory()">Actualizar</button>
+      <button class="sm-btn danger" onclick="clearHistory()">Limpar tudo</button>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-settings">
+    <!-- Aparência -->
+    <div class="settings-section">
+      <div class="settings-title">Aparência</div>
+      <div class="settings-row">
+        <label>Tema</label>
+        <button class="theme-toggle" id="theme-toggle">Escuro</button>
+      </div>
+      <div class="settings-row">
+        <label>Opacidade</label>
+        <input type="range" id="opacity-range" min="20" max="100" value="92">
+        <span id="opacity-val" style="font-size: 10px; min-width: 30px; text-align: right;">92%</span>
+      </div>
+      <div class="settings-row">
+        <label>Volume dos alertas</label>
+        <input type="range" id="volume-range" min="0" max="100" value="50">
+        <span id="volume-val" style="font-size: 10px; min-width: 30px; text-align: right;">50%</span>
+      </div>
+    </div>
+
+    <!-- Comportamento -->
+    <div class="settings-section">
+      <div class="settings-title">Comportamento</div>
+      <div class="settings-row">
+        <label>Minimizar para tray ao fechar</label>
+        <button class="theme-toggle" id="tray-toggle">Ligado</button>
+      </div>
+    </div>
+
+    <!-- Keybinds globais -->
+    <div class="settings-section">
+      <div class="settings-title">Atalhos globais</div>
+      <div class="settings-row">
+        <label>Mostrar/Esconder</label>
+        <input class="kb-input" data-kb="toggleHide" readonly>
+      </div>
+      <div class="settings-row">
+        <label>Click-through</label>
+        <input class="kb-input" data-kb="toggleClickThrough" readonly>
+      </div>
+      <div class="settings-row">
+        <label>Opacidade +</label>
+        <input class="kb-input" data-kb="opacityUp" readonly>
+      </div>
+      <div class="settings-row">
+        <label>Opacidade -</label>
+        <input class="kb-input" data-kb="opacityDown" readonly>
+      </div>
+      <div class="settings-row">
+        <label>Mini mode</label>
+        <input class="kb-input" data-kb="toggleMini" readonly>
+      </div>
+    </div>
+
+    <!-- Keybinds de spells -->
+    <div class="settings-section">
+      <div class="settings-title">Activar spells (por inimigo)</div>
+      <div id="spell-kb-grid"></div>
+      <div style="font-size: 9px; color: var(--text-faint); margin-top: 6px; line-height: 1.4;">
+        Carrega num campo, depois pressiona a tecla que queres atribuir.
+        Inimigos são numerados de cima (1) para baixo (5) na lista.
+      </div>
+    </div>
+
+    <!-- Reset -->
+    <div class="settings-section">
+      <div class="settings-title">Manutenção</div>
+      <div class="settings-row">
+        <label>Forçar reset da partida actual</label>
+        <button class="sm-btn" onclick="resetMatch()">Reset</button>
+      </div>
+      <div class="settings-row">
+        <label>Reset keybinds ao padrão</label>
+        <button class="sm-btn" onclick="resetKeybinds()">Reset</button>
+      </div>
+      <div class="settings-row">
+        <label>Sair totalmente (não minimizar)</label>
+        <button class="sm-btn danger" onclick="quitApp()">Sair</button>
+      </div>
+    </div>
+
+    <div style="font-size: 9px; color: var(--text-faint); text-align: center; margin-top: 8px;">
+      LoL Companion v2.0.0
+    </div>
+  </div>
+</div>
+
+<div id="banner-wrap"></div>
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE DE DADOS — CAMPEÕES (ult CDs por rank)
+   Formato: [nome, [r1, r2, r3]]
+   Valores aproximados — mantém a estrutura do projecto original.
+═══════════════════════════════════════════════════════════════ */
+const CHAMPIONS_RAW = [
+  ["Aatrox", [120, 100, 80]], ["Ahri", [110, 95, 80]], ["Akali", [120, 95, 70]],
+  ["Akshan", [100, 80, 60]], ["Alistar", [120, 100, 80]], ["Amumu", [130, 120, 110]],
+  ["Anivia", [120, 110, 100]], ["Annie", [120, 100, 80]], ["Aphelios", [120, 110, 100]],
+  ["Ashe", [100, 90, 80]], ["AurelionSol", [120, 110, 100]], ["Azir", [120, 105, 90]],
+  ["Bard", [110, 100, 90]], ["Belveth", [120, 100, 80]], ["Blitzcrank", [120, 100, 80]],
+  ["Brand", [105, 90, 75]], ["Braum", [140, 120, 100]], ["Briar", [130, 110, 90]],
+  ["Caitlyn", [90, 75, 60]], ["Camille", [140, 100, 60]], ["Cassiopeia", [100, 85, 70]],
+  ["ChoGath", [120, 100, 80]], ["Corki", [60, 55, 50]], ["Darius", [120, 100, 80]],
+  ["Diana", [100, 85, 70]], ["DrMundo", [110, 95, 80]], ["Draven", [120, 100, 80]],
+  ["Ekko", [110, 90, 70]], ["Elise", [60, 60, 60]], ["Evelynn", [140, 110, 80]],
+  ["Ezreal", [100, 85, 70]], ["Fiddlesticks", [140, 125, 110]], ["Fiora", [120, 90, 60]],
+  ["Fizz", [100, 85, 70]], ["Galio", [200, 160, 120]], ["Gangplank", [180, 160, 140]],
+  ["Garen", [120, 100, 80]], ["Gnar", [100, 100, 100]], ["Gragas", [100, 80, 60]],
+  ["Graves", [120, 100, 80]], ["Gwen", [120, 90, 60]], ["Hecarim", [140, 120, 100]],
+  ["Heimerdinger", [80, 80, 80]], ["Hwei", [120, 100, 80]], ["Illaoi", [120, 100, 80]],
+  ["Irelia", [120, 100, 80]], ["Ivern", [120, 110, 100]], ["Janna", [150, 135, 120]],
+  ["JarvanIV", [120, 110, 100]], ["Jax", [80, 80, 80]], ["Jayce", [20, 18, 16]],
+  ["Jhin", [120, 100, 80]], ["Jinx", [90, 75, 60]], ["KSante", [120, 100, 80]],
+  ["KaiSa", [130, 100, 70]], ["Kalista", [60, 60, 60]], ["Karma", [45, 35, 25]],
+  ["Karthus", [180, 150, 120]], ["Kassadin", [150, 120, 90]], ["Katarina", [90, 75, 60]],
+  ["Kayle", [100, 90, 80]], ["Kayn", [150, 120, 90]], ["Kennen", [120, 105, 90]],
+  ["KhaZix", [100, 85, 70]], ["Kindred", [120, 100, 80]], ["Kled", [140, 120, 100]],
+  ["KogMaw", [3, 2, 1]], ["LeBlanc", [40, 32, 24]], ["LeeSin", [90, 75, 60]],
+  ["Leona", [100, 85, 70]], ["Lillia", [130, 100, 70]], ["Lissandra", [100, 80, 60]],
+  ["Lucian", [120, 100, 80]], ["Lulu", [120, 105, 90]], ["Lux", [80, 65, 50]],
+  ["Malphite", [130, 105, 80]], ["Malzahar", [130, 110, 90]], ["Maokai", [120, 100, 80]],
+  ["MasterYi", [75, 65, 55]], ["Milio", [120, 105, 90]], ["MissFortune", [90, 75, 60]],
+  ["Mordekaiser", [120, 100, 80]], ["Morgana", [120, 100, 80]], ["Nami", [130, 110, 90]],
+  ["Nasus", [120, 100, 80]], ["Nautilus", [120, 100, 80]], ["Neeko", [120, 100, 80]],
+  ["Nidalee", [4, 3, 2]], ["Nilah", [140, 110, 80]], ["Nocturne", [150, 125, 100]],
+  ["Nunu", [110, 100, 90]], ["Olaf", [100, 80, 60]], ["Orianna", [110, 95, 80]],
+  ["Ornn", [130, 110, 90]], ["Pantheon", [120, 105, 90]], ["Poppy", [140, 120, 100]],
+  ["Pyke", [120, 95, 70]], ["Qiyana", [130, 100, 70]], ["Quinn", [75, 60, 45]],
+  ["Rakan", [130, 110, 90]], ["Rammus", [100, 80, 60]], ["RekSai", [100, 85, 70]],
+  ["Rell", [120, 100, 80]], ["Renata", [120, 95, 70]], ["Renekton", [120, 120, 120]],
+  ["Rengar", [110, 90, 70]], ["Riven", [110, 85, 60]], ["Rumble", [105, 90, 75]],
+  ["Ryze", [210, 180, 150]], ["Samira", [120, 100, 80]], ["Sejuani", [100, 85, 70]],
+  ["Senna", [120, 100, 80]], ["Seraphine", [150, 130, 110]], ["Sett", [120, 100, 80]],
+  ["Shaco", [100, 90, 80]], ["Shen", [180, 150, 120]], ["Shyvana", [110, 95, 80]],
+  ["Singed", [120, 100, 80]], ["Sion", [140, 120, 100]], ["Sivir", [100, 80, 60]],
+  ["Skarner", [110, 100, 90]], ["Smolder", [90, 75, 60]], ["Sona", [140, 110, 80]],
+  ["Soraka", [160, 145, 130]], ["Swain", [120, 100, 80]], ["Sylas", [140, 110, 80]],
+  ["Syndra", [120, 100, 80]], ["TahmKench", [140, 120, 100]], ["Taliyah", [120, 110, 100]],
+  ["Talon", [120, 100, 80]], ["Taric", [180, 150, 120]], ["Teemo", [1, 1, 1]],
+  ["Thresh", [100, 80, 60]], ["Tristana", [100, 100, 100]], ["Trundle", [100, 85, 70]],
+  ["Tryndamere", [110, 100, 90]], ["TwistedFate", [180, 150, 120]], ["Twitch", [100, 100, 100]],
+  ["Udyr", [50, 40, 30]], ["Urgot", [120, 100, 80]], ["Varus", [100, 85, 70]],
+  ["Vayne", [85, 75, 65]], ["Veigar", [80, 70, 60]], ["VelKoz", [120, 100, 80]],
+  ["Vex", [110, 90, 70]], ["Vi", [130, 105, 80]], ["Viego", [120, 90, 60]],
+  ["Viktor", [120, 100, 80]], ["Vladimir", [140, 110, 80]], ["Volibear", [140, 120, 100]],
+  ["Warwick", [100, 90, 80]], ["Wukong", [120, 105, 90]], ["Xayah", [130, 100, 70]],
+  ["Xerath", [130, 120, 110]], ["XinZhao", [120, 100, 80]], ["Yasuo", [80, 60, 40]],
+  ["Yone", [120, 100, 80]], ["Yorick", [130, 100, 70]], ["Yuumi", [110, 100, 90]],
+  ["Zac", [120, 100, 80]], ["Zed", [120, 90, 60]], ["Zeri", [120, 100, 80]],
+  ["Ziggs", [120, 100, 80]], ["Zilean", [150, 150, 150]], ["Zoe", [120, 100, 80]],
+  ["Zyra", [100, 85, 70]],
+];
+const CHAMPIONS = {};
+for (const [n, cds] of CHAMPIONS_RAW) {
+  // Múltiplas chaves: sem espaços/apóstrofos, minúsculas
+  const base = n.replace(/[\s'.]/g, "").toLowerCase();
+  CHAMPIONS[base] = { name: n, ultCD: cds };
+}
+
+/* Summoner spells (CDs base em segundos) */
+const SUMMONER_SPELLS = {
+  summonerflash: { name: "Flash", cd: 300 },
+  summonerhaste: { name: "Ghost", cd: 210 },
+  summonerheal: { name: "Heal", cd: 240 },
+  summonerbarrier: { name: "Barrier", cd: 180 },
+  summonerexhaust: { name: "Exhaust", cd: 210 },
+  summonerdot: { name: "Ignite", cd: 180 },
+  summonercleanse: { name: "Cleanse", cd: 210 },
+  summonerteleport: { name: "TP", cd: 360 },
+  summoner_teleport_upgrade: { name: "TP+", cd: 240 },
+  summonersmite: { name: "Smite", cd: 15 },
+  summonermana: { name: "Clarity", cd: 240 },
+  summonersnowball: { name: "Mark", cd: 80 },
+};
+function spellData(rawId) {
+  if (!rawId) return { name: "?", cd: 300 };
+  const k = rawId.toLowerCase();
+  return SUMMONER_SPELLS[k] || { name: rawId.replace("Summoner", ""), cd: 300 };
+}
+
+/* Death timer — Base Respawn Wait por nível (Wiki oficial) */
+const BRW = [
+  0, 10, 10, 12, 12, 14, 16, 20, 25, 28,
+  32.5, 32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50,
+];
+function deathTimer(level, gameSeconds) {
+  const lvl = Math.max(1, Math.min(18, level | 0));
+  const base = BRW[lvl];
+  const min = gameSeconds / 60;
+  let tim = 0;
+  if (min >= 15 && min < 30) tim = ((min - 15) / 15) * 0.50;
+  else if (min >= 30) tim = 0.50;
+  return Math.round(base * (1 + tim));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const state = {
+  connected: false,
+  gameTime: 0,
+  localTeam: null,          // "ORDER" ou "CHAOS"
+  enemies: [],              // [{champ, level, spells:[{id,endAt},{}], ult:{endAt}, ci, dead, deadUntil}]
+  allies: [],
+  objectives: {
+    drake: { nextAt: 0, label: "Drake" },
+    baron: { nextAt: 0, label: "Baron" },
+    herald: { nextAt: 0, label: "Herald" },
+    grubs: { nextAt: 0, label: "Grubs" },
+  },
+  wards: [],                // [{id, type, endAt|null}]
+  eventsSeen: new Set(),    // IDs de eventos já processados
+  alerted: new Set(),       // IDs de alertas já emitidos
+  settings: null,
+  savedThisMatch: false,
+};
+
+/* Tempo de jogo local (ms since page load → usamos performance.now) */
+function now() { return performance.now() / 1000; }
+
+/* ═══════════════════════════════════════════════════════════════
+   ÁUDIO
+═══════════════════════════════════════════════════════════════ */
+let audioCtx = null;
+function beep(freq, duration = 0.15, type = "sine") {
+  if (!state.settings || state.settings.soundVolume <= 0) return;
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = state.settings.soundVolume * 0.3;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+    osc.stop(audioCtx.currentTime + duration);
+  } catch (e) {}
+}
+function beepPattern(pattern) {
+  pattern.forEach(([f, d, delay], i) => setTimeout(() => beep(f, d), delay));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BANNERS
+═══════════════════════════════════════════════════════════════ */
+function banner(text, kind = "info") {
+  const wrap = document.getElementById("banner-wrap");
+  const el = document.createElement("div");
+  el.className = `banner ${kind}`;
+  el.textContent = text;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INICIALIZAÇÃO DE UI
+═══════════════════════════════════════════════════════════════ */
+// Tabs
+document.querySelectorAll(".tab").forEach((t) => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((x) => x.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach((x) => x.classList.remove("active"));
+    t.classList.add("active");
+    document.getElementById("panel-" + t.dataset.tab).classList.add("active");
+    if (t.dataset.tab === "history") refreshHistory();
+  });
+});
+
+// Controls
+document.getElementById("btn-mini").addEventListener("click", () => window.electronAPI.toggleMini());
+document.getElementById("btn-click-through").addEventListener("click", () => window.electronAPI.toggleClickThrough());
+document.getElementById("btn-close").addEventListener("click", () => {
+  // Se minimizeToTray estiver ligado, isto minimiza; senão sai
+  window.close();
+});
+
+// Theme toggle
+document.getElementById("theme-toggle").addEventListener("click", () => {
+  const next = state.settings.theme === "dark" ? "light" : "dark";
+  applyTheme(next);
+  updateSettings({ theme: next });
+});
+function applyTheme(theme) {
+  document.body.classList.remove("theme-dark", "theme-light");
+  document.body.classList.add("theme-" + theme);
+  document.documentElement.className = theme === "light" ? "theme-light" : "";
+  document.getElementById("theme-toggle").textContent = theme === "light" ? "Claro" : "Escuro";
+  state.settings.theme = theme;
+}
+
+// Tray toggle
+document.getElementById("tray-toggle").addEventListener("click", () => {
+  const next = !state.settings.minimizeToTray;
+  state.settings.minimizeToTray = next;
+  document.getElementById("tray-toggle").textContent = next ? "Ligado" : "Desligado";
+  updateSettings({ minimizeToTray: next });
+});
+
+// Opacity
+document.getElementById("opacity-range").addEventListener("input", (e) => {
+  const v = parseInt(e.target.value) / 100;
+  document.getElementById("opacity-val").textContent = e.target.value + "%";
+  updateSettings({ opacity: v });
+});
+
+// Volume
+document.getElementById("volume-range").addEventListener("input", (e) => {
+  const v = parseInt(e.target.value) / 100;
+  document.getElementById("volume-val").textContent = e.target.value + "%";
+  state.settings.soundVolume = v;
+  updateSettings({ soundVolume: v });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYBINDS — editor
+═══════════════════════════════════════════════════════════════ */
+let listeningInput = null;
+
+function buildSpellKbGrid() {
+  const grid = document.getElementById("spell-kb-grid");
+  grid.innerHTML = "";
+  for (let i = 0; i < 5; i++) {
+    for (let s = 0; s < 2; s++) {
+      const row = document.createElement("div");
+      row.className = "settings-row";
+      const lbl = document.createElement("label");
+      lbl.textContent = `Inimigo ${i + 1} — Spell ${s + 1}`;
+      const inp = document.createElement("input");
+      inp.className = "kb-input";
+      inp.readOnly = true;
+      inp.dataset.kb = `spell_${i}_${s}`;
+      row.appendChild(lbl);
+      row.appendChild(inp);
+      grid.appendChild(row);
+    }
+  }
+  bindKeybindInputs();
+}
+
+function bindKeybindInputs() {
+  document.querySelectorAll(".kb-input").forEach((inp) => {
+    inp.onclick = () => startListening(inp);
+  });
+}
+
+function startListening(inp) {
+  if (listeningInput) listeningInput.classList.remove("listening");
+  listeningInput = inp;
+  inp.classList.add("listening");
+  inp.value = "Pressiona uma tecla...";
+}
+
+function accelFromEvent(e) {
+  const parts = [];
+  if (e.ctrlKey) parts.push("Ctrl");
+  if (e.shiftKey) parts.push("Shift");
+  if (e.altKey) parts.push("Alt");
+  if (e.metaKey) parts.push("Meta");
+  let k = e.key;
+  if (k === " ") k = "Space";
+  else if (k.length === 1) k = k.toUpperCase();
+  else if (k === "ArrowUp") k = "Up";
+  else if (k === "ArrowDown") k = "Down";
+  else if (k === "ArrowLeft") k = "Left";
+  else if (k === "ArrowRight") k = "Right";
+  // Ignorar teclas modificadoras sozinhas
+  if (["Control", "Shift", "Alt", "Meta"].includes(k)) return null;
+  parts.push(k);
+  return parts.join("+");
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!listeningInput) return;
+  e.preventDefault();
+  if (e.key === "Escape") {
+    listeningInput.classList.remove("listening");
+    listeningInput.value = state.settings.keybinds[listeningInput.dataset.kb] || "";
+    listeningInput = null;
+    return;
+  }
+  const accel = accelFromEvent(e);
+  if (!accel) return;
+  const kb = listeningInput.dataset.kb;
+  state.settings.keybinds[kb] = accel;
+  listeningInput.value = accel;
+  listeningInput.classList.remove("listening");
+  listeningInput = null;
+  updateSettings({ keybinds: state.settings.keybinds });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   SETTINGS HELPERS
+═══════════════════════════════════════════════════════════════ */
+let settingsSaveTimer = null;
+function updateSettings(partial) {
+  clearTimeout(settingsSaveTimer);
+  Object.assign(state.settings, partial);
+  settingsSaveTimer = setTimeout(() => {
+    window.electronAPI.updateSettings(partial);
+  }, 150);
+}
+
+function applySettingsToUI() {
+  applyTheme(state.settings.theme || "dark");
+  document.getElementById("opacity-range").value = Math.round((state.settings.opacity || 0.92) * 100);
+  document.getElementById("opacity-val").textContent = Math.round((state.settings.opacity || 0.92) * 100) + "%";
+  document.getElementById("volume-range").value = Math.round((state.settings.soundVolume || 0.5) * 100);
+  document.getElementById("volume-val").textContent = Math.round((state.settings.soundVolume || 0.5) * 100) + "%";
+  document.getElementById("tray-toggle").textContent = state.settings.minimizeToTray ? "Ligado" : "Desligado";
+  // Preencher keybind inputs
+  document.querySelectorAll(".kb-input").forEach((inp) => {
+    inp.value = state.settings.keybinds[inp.dataset.kb] || "";
+  });
+  // Mini mode visual
+  if (state.settings.miniMode) document.body.classList.add("mini");
+  else document.body.classList.remove("mini");
+}
+
+function resetKeybinds() {
+  const defaults = {
+    toggleHide: "Ctrl+Shift+H",
+    toggleClickThrough: "Ctrl+Shift+T",
+    opacityUp: "Ctrl+Shift+Up",
+    opacityDown: "Ctrl+Shift+Down",
+    toggleMini: "Ctrl+Shift+M",
+    spell_0_0: "F1", spell_0_1: "F2",
+    spell_1_0: "F3", spell_1_1: "F4",
+    spell_2_0: "F5", spell_2_1: "F6",
+    spell_3_0: "F7", spell_3_1: "F8",
+    spell_4_0: "F9", spell_4_1: "F10",
+  };
+  state.settings.keybinds = defaults;
+  updateSettings({ keybinds: defaults });
+  applySettingsToUI();
+  banner("Atalhos repostos", "info");
+}
+
+function quitApp() {
+  if (confirm("Sair completamente? O overlay não ficará no tray.")) {
+    window.electronAPI.quitApp();
+  }
+}
+
+function resetMatch() {
+  state.enemies = [];
+  state.objectives = {
+    drake: { nextAt: 0, label: "Drake" },
+    baron: { nextAt: 0, label: "Baron" },
+    herald: { nextAt: 0, label: "Herald" },
+    grubs: { nextAt: 0, label: "Grubs" },
+  };
+  state.eventsSeen.clear();
+  state.alerted.clear();
+  state.savedThisMatch = false;
+  renderEnemies();
+  renderObjectives();
+  banner("Estado da partida reposto", "info");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RIOT DATA HANDLER
+═══════════════════════════════════════════════════════════════ */
+window.electronAPI.onSettingsLoaded((s) => {
+  state.settings = s;
+  buildSpellKbGrid();
+  applySettingsToUI();
+});
+
+window.electronAPI.onRiotData((data) => {
+  state.connected = true;
+  const statusEl = document.getElementById("status");
+  statusEl.textContent = "EM JOGO — " + formatTime(data.gameData.gameTime);
+  statusEl.className = "status ok";
+  state.gameTime = data.gameData.gameTime || 0;
+
+  // Identificar team do jogador local (fallback robusto para várias versões da API)
+  if (data.activePlayer) {
+    const local = data.activePlayer.riotId
+      || data.activePlayer.summonerName
+      || data.activePlayer.riotIdGameName
+      || "";
+    const localBase = local.split("#")[0];
+    const me = data.players.find(p => {
+      const pName = p.riotId || p.summonerName || p.riotIdGameName || "";
+      return pName.split("#")[0] === localBase;
+    });
+    if (me) state.localTeam = me.team;
+  }
+
+  // Partir players em enemies e allies
+  const enemies = data.players.filter(p => p.team !== state.localTeam);
+  const allies = data.players.filter(p => p.team === state.localTeam);
+
+  // Sincronizar lista de inimigos (mantém timers, actualiza level)
+  // Key estável: riotId → riotIdGameName → summonerName → championName
+  const playerKey = (p) => p.riotId || p.riotIdGameName || p.summonerName || p.championName || "";
+  const normalizeChampKey = (s) => (s || "").replace(/^game_character_displayname_/i, "").replace(/[\s'.]/g, "").toLowerCase();
+
+  const newEnemies = enemies.map((p, idx) => {
+    const key = playerKey(p);
+    const existing = state.enemies.find(e => e.key === key);
+    const champKey = normalizeChampKey(p.rawChampionName || p.championName);
+    const chData = CHAMPIONS[champKey];
+    const displayName = p.championName || (chData ? chData.name : "?");
+    const sp0 = p.summonerSpells?.summonerSpellOne?.rawDescription || "";
+    const sp1 = p.summonerSpells?.summonerSpellTwo?.rawDescription || "";
+    return {
+      key,
+      champ: displayName,
+      champKey,
+      level: p.level || 1,
+      ultCD: chData ? chData.ultCD : [120, 100, 80],
+      slots: existing ? existing.slots : [
+        { id: sp0, name: spellData(sp0).name, baseCD: spellData(sp0).cd, endAt: 0 },
+        { id: sp1, name: spellData(sp1).name, baseCD: spellData(sp1).cd, endAt: 0 },
+      ],
+      ult: existing ? existing.ult : { endAt: 0 },
+      ci: state.settings?.cosmicInsightPerEnemy?.[idx] || false,
+      dead: false,
+      deadUntil: existing ? existing.deadUntil : 0,
+    };
+  });
+  state.enemies = newEnemies;
+  state.allies = allies.map(p => ({
+    champ: p.championName,
+    level: p.level,
+    items: p.items || [],
+  }));
+
+  // Processar eventos
+  for (const ev of (data.events || [])) {
+    const eid = `${ev.EventID}_${ev.EventName}_${ev.EventTime}`;
+    if (state.eventsSeen.has(eid)) continue;
+    state.eventsSeen.add(eid);
+    processEvent(ev);
+  }
+
+  // Auto-save no final da partida
+  if (!state.savedThisMatch && data.events?.some(e => e.EventName === "GameEnd")) {
+    saveCurrentMatch();
+    state.savedThisMatch = true;
+  }
+});
+
+window.electronAPI.onRiotStatus((s) => {
+  if (!s.connected) {
+    state.connected = false;
+    const statusEl = document.getElementById("status");
+    statusEl.textContent = "A AGUARDAR...";
+    statusEl.className = "status";
+  }
+});
+
+window.electronAPI.onClickThrough((on) => {
+  document.getElementById("btn-click-through").style.color = on ? "var(--accent)" : "";
+  banner(on ? "Click-through LIGADO" : "Click-through DESLIGADO", "info");
+});
+
+window.electronAPI.onMiniMode((on) => {
+  state.settings.miniMode = on;
+  if (on) document.body.classList.add("mini");
+  else document.body.classList.remove("mini");
+});
+
+window.electronAPI.onHotkeySpell(({ enemyIdx, spellIdx }) => {
+  const e = state.enemies[enemyIdx];
+  if (!e) return;
+  activateSpell(enemyIdx, spellIdx);
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   EVENTOS DO JOGO
+═══════════════════════════════════════════════════════════════ */
+function processEvent(ev) {
+  switch (ev.EventName) {
+    case "DragonKill": {
+      state.objectives.drake.nextAt = state.gameTime + 300; // 5min respawn
+      banner("DRAKE levado → 5:00", "info");
+      break;
+    }
+    case "BaronKill":
+      state.objectives.baron.nextAt = state.gameTime + 360; // 6min
+      banner("BARON levado → 6:00", "info");
+      break;
+    case "HeraldKill":
+      state.objectives.herald.nextAt = state.gameTime + 360;
+      banner("HERALD levado → 6:00", "info");
+      break;
+    case "VoidgrubKill":
+      // 3 grubs → 6min só spawnam uma vez, mas trackamos mesmo assim
+      state.objectives.grubs.nextAt = state.gameTime + 360;
+      break;
+    case "ChampionKill": {
+      // Death timer para inimigo que morreu
+      const victim = ev.VictimName;
+      const idx = state.enemies.findIndex(e => e.key === victim || e.champ === victim);
+      if (idx >= 0) {
+        const e = state.enemies[idx];
+        const dt = deathTimer(e.level, state.gameTime);
+        e.deadUntil = now() + dt;
+        e.dead = true;
+        banner(`${e.champ} morreu → ${dt}s`, "warn");
+      }
+      break;
+    }
+    case "FirstBlood":
+    case "Multikill":
+    case "Ace":
+    case "FirstBrick":
+    case "TurretKilled":
+    case "InhibKilled":
+    case "MinionsSpawning":
+    case "GameStart":
+    case "GameEnd":
+      break;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SPELL/ULT ACTIVATION
+═══════════════════════════════════════════════════════════════ */
+function activateSpell(enemyIdx, spellIdx) {
+  const e = state.enemies[enemyIdx];
+  if (!e) return;
+  const slot = e.slots[spellIdx];
+  if (!slot) return;
+  // Cosmic Insight: summoner spells com 18 haste (-15.25%)
+  let cd = slot.baseCD;
+  if (e.ci) cd = cd * (100 / 118);
+  slot.endAt = now() + cd;
+  beepPattern([[440, 0.1, 0], [660, 0.1, 100]]);
+  renderEnemies();
+}
+
+function activateUlt(enemyIdx) {
+  const e = state.enemies[enemyIdx];
+  if (!e) return;
+  const rank = estimateUltRank(e.level);
+  const cd = e.ultCD[rank - 1];
+  e.ult.endAt = now() + cd;
+  beepPattern([[330, 0.15, 0], [440, 0.15, 120]]);
+  renderEnemies();
+}
+
+function estimateUltRank(level) {
+  if (level >= 16) return 3;
+  if (level >= 11) return 2;
+  return 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDERING
+═══════════════════════════════════════════════════════════════ */
+function formatTime(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function timerLabel(remaining) {
+  remaining = Math.max(0, remaining);
+  if (remaining === 0) return "READY";
+  if (remaining < 60) return Math.ceil(remaining) + "s";
+  const m = Math.floor(remaining / 60);
+  const s = Math.floor(remaining % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function renderEnemies() {
+  const list = document.getElementById("enemies-list");
+  if (!state.enemies.length) {
+    list.innerHTML = `<div class="empty-state">
+      <strong>À espera da partida...</strong>
+      Abre o LoL e entra numa partida para começar a auto-detecção.
+    </div>`;
+    return;
+  }
+  // Em mini mode, mostra só inimigos com CD activo
+  let enemiesToShow = state.enemies;
+  if (state.settings?.miniMode) {
+    enemiesToShow = state.enemies.filter(e =>
+      (e.slots[0].endAt > now()) ||
+      (e.slots[1].endAt > now()) ||
+      (e.ult.endAt > now()) ||
+      e.dead
+    );
+    if (!enemiesToShow.length) {
+      list.innerHTML = `<div class="empty-state" style="padding:10px;font-size:10px;">Sem CDs activos</div>`;
+      return;
+    }
+  }
+
+  list.innerHTML = enemiesToShow.map((e, renderIdx) => {
+    const idx = state.enemies.indexOf(e);
+    const s0 = e.slots[0];
+    const s1 = e.slots[1];
+    const rem0 = Math.max(0, s0.endAt - now());
+    const rem1 = Math.max(0, s1.endAt - now());
+    const remU = Math.max(0, e.ult.endAt - now());
+    const remDead = Math.max(0, e.deadUntil - now());
+
+    const cls0 = rem0 === 0 ? "" : (rem0 < 10 ? "almost" : "on-cd");
+    const cls1 = rem1 === 0 ? "" : (rem1 < 10 ? "almost" : "on-cd");
+    const clsU = remU === 0 ? "ult" : (remU < 10 ? "ult almost" : "ult on-cd");
+
+    const hk0 = state.settings?.keybinds[`spell_${idx}_0`] || "";
+    const hk1 = state.settings?.keybinds[`spell_${idx}_1`] || "";
+
+    return `
+      <div class="enemy-card">
+        <div class="enemy-header">
+          <span class="enemy-champ">${e.champ}</span>
+          <span class="enemy-level">Lv${e.level}</span>
+          ${remDead > 0 ? `<span class="death-badge">☠ ${Math.ceil(remDead)}s</span>` : ""}
+          <button class="enemy-ci ${e.ci ? "on" : ""}" onclick="toggleCI(${idx})" title="Cosmic Insight (-18 haste)">CI</button>
+        </div>
+        <div class="spells-row">
+          <button class="spell-btn ${cls0}" onclick="activateSpell(${idx}, 0)">
+            ${hk0 ? `<span class="hk">${hk0}</span>` : ""}
+            <span class="lbl">${s0.name}</span>
+            <span class="timer">${timerLabel(rem0)}</span>
+          </button>
+          <button class="spell-btn ${cls1}" onclick="activateSpell(${idx}, 1)">
+            ${hk1 ? `<span class="hk">${hk1}</span>` : ""}
+            <span class="lbl">${s1.name}</span>
+            <span class="timer">${timerLabel(rem1)}</span>
+          </button>
+          <button class="spell-btn ${clsU}" onclick="activateUlt(${idx})">
+            <span class="lbl">R (Lv${estimateUltRank(e.level)})</span>
+            <span class="timer">${timerLabel(remU)}</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function toggleCI(idx) {
+  state.enemies[idx].ci = !state.enemies[idx].ci;
+  if (!state.settings.cosmicInsightPerEnemy) state.settings.cosmicInsightPerEnemy = [false, false, false, false, false];
+  state.settings.cosmicInsightPerEnemy[idx] = state.enemies[idx].ci;
+  updateSettings({ cosmicInsightPerEnemy: state.settings.cosmicInsightPerEnemy });
+  renderEnemies();
+}
+
+function renderObjectives() {
+  const list = document.getElementById("objs-list");
+  const objs = [
+    { key: "drake", cls: "drake", lbl: "DRAKE" },
+    { key: "baron", cls: "baron", lbl: "BARON" },
+    { key: "herald", cls: "herald", lbl: "HERALD" },
+    { key: "grubs", cls: "grubs", lbl: "GRUBS" },
+  ];
+  list.innerHTML = objs.map(o => {
+    const nextAt = state.objectives[o.key].nextAt;
+    const rem = nextAt === 0 ? 0 : Math.max(0, nextAt - state.gameTime);
+    const status = nextAt === 0 ? "waiting" : (rem === 0 ? "ready" : (rem < 30 ? "almost" : ""));
+    const text = nextAt === 0 ? "—" : (rem === 0 ? "UP!" : formatTime(rem));
+    return `
+      <div class="obj-card">
+        <span class="obj-name ${o.cls}">${o.lbl}</span>
+        <span class="obj-timer ${status}">${text}</span>
+        <button class="obj-btn" onclick="markObjTaken('${o.key}')">LEVADO</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function markObjTaken(key) {
+  const respawn = { drake: 300, baron: 360, herald: 360, grubs: 360 };
+  state.objectives[key].nextAt = state.gameTime + respawn[key];
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WARDS
+═══════════════════════════════════════════════════════════════ */
+let wardIdCounter = 0;
+function addWard(type, dur) {
+  const id = ++wardIdCounter;
+  const endAt = dur > 0 ? now() + dur : null;
+  state.wards.push({ id, type, endAt });
+  renderWards();
+}
+function removeWard(id) {
+  state.wards = state.wards.filter(w => w.id !== id);
+  renderWards();
+}
+function renderWards() {
+  const list = document.getElementById("wards-list");
+  if (!state.wards.length) {
+    list.innerHTML = `<div class="empty-state" style="padding:10px;">Sem wards. Adiciona quando vês o inimigo colocar.</div>`;
+    return;
+  }
+  list.innerHTML = state.wards.map(w => {
+    const rem = w.endAt ? Math.max(0, w.endAt - now()) : null;
+    const timer = rem === null ? "∞" : (rem === 0 ? "EXPIRADO" : Math.ceil(rem) + "s");
+    const cls = rem !== null && rem < 15 && rem > 0 ? "almost" : "";
+    return `
+      <div class="ward-item">
+        <span class="ward-type">${w.type}</span>
+        <span class="ward-timer ${cls}">${timer}</span>
+        <button class="ward-rm" onclick="removeWard(${w.id})">✕</button>
+      </div>
+    `;
+  }).join("");
+  // Auto-remover expirados
+  state.wards = state.wards.filter(w => w.endAt === null || w.endAt > now() - 5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HISTORY
+═══════════════════════════════════════════════════════════════ */
+async function refreshHistory() {
+  const list = document.getElementById("history-list");
+  const matches = await window.electronAPI.getHistory();
+  if (!matches.length) {
+    list.innerHTML = `<div class="history-empty">Sem partidas guardadas ainda.</div>`;
+    return;
+  }
+  list.innerHTML = matches.map(m => {
+    const date = new Date(m.savedAt).toLocaleString("pt-PT");
+    const dur = formatTime(m.duration || 0);
+    const champs = (m.enemies || []).map(e => e.champ).join(", ");
+    return `
+      <div class="match-card">
+        <div class="match-head">
+          <span>${date}</span>
+          <span>${dur}</span>
+        </div>
+        <div class="match-champs">${champs || "—"}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function clearHistory() {
+  if (!confirm("Apagar todo o histórico?")) return;
+  await window.electronAPI.clearHistory();
+  refreshHistory();
+  banner("Histórico apagado", "info");
+}
+
+function saveCurrentMatch() {
+  const data = {
+    duration: state.gameTime,
+    enemies: state.enemies.map(e => ({ champ: e.champ, level: e.level })),
+  };
+  window.electronAPI.saveMatch(data);
+  banner("Partida guardada", "ok");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ALERT LOOP (a cada 500ms, actualiza UI e dispara alertas)
+═══════════════════════════════════════════════════════════════ */
+function tick() {
+  // Actualizar estado de dead
+  for (const e of state.enemies) {
+    if (e.dead && e.deadUntil <= now()) e.dead = false;
+  }
+  renderEnemies();
+  renderObjectives();
+  renderWards();
+
+  // Alertas de spells/ults prestes a ficar ready
+  for (let i = 0; i < state.enemies.length; i++) {
+    const e = state.enemies[i];
+    for (let s = 0; s < 2; s++) {
+      const slot = e.slots[s];
+      const rem = slot.endAt - now();
+      const key = `s_${i}_${s}_${Math.floor(slot.endAt)}`;
+      if (rem > 9 && rem < 11 && !state.alerted.has(key)) {
+        state.alerted.add(key);
+        beep(800, 0.12);
+        banner(`${e.champ} ${slot.name} em 10s`, "warn");
+      }
+    }
+    const remU = e.ult.endAt - now();
+    const keyU = `u_${i}_${Math.floor(e.ult.endAt)}`;
+    if (remU > 9 && remU < 11 && !state.alerted.has(keyU)) {
+      state.alerted.add(keyU);
+      beep(1000, 0.15);
+      banner(`${e.champ} ULT em 10s`, "warn");
+    }
+  }
+
+  // Alertas de objectivos
+  for (const key of Object.keys(state.objectives)) {
+    const o = state.objectives[key];
+    if (o.nextAt === 0) continue;
+    const rem = o.nextAt - state.gameTime;
+    const ak = `obj_${key}_${o.nextAt}`;
+    if (rem > 29 && rem < 31 && !state.alerted.has(ak)) {
+      state.alerted.add(ak);
+      beep(600, 0.2);
+      banner(`${o.label.toUpperCase()} em 30s`, "info");
+    }
+  }
+}
+setInterval(tick, 500);
+
+/* Expor funções ao window para onclick handlers */
+window.toggleCI = toggleCI;
+window.activateSpell = activateSpell;
+window.activateUlt = activateUlt;
+window.markObjTaken = markObjTaken;
+window.addWard = addWard;
+window.removeWard = removeWard;
+window.refreshHistory = refreshHistory;
+window.clearHistory = clearHistory;
+window.resetMatch = resetMatch;
+window.resetKeybinds = resetKeybinds;
+window.quitApp = quitApp;
+
+/* Boot: carregar settings */
+(async function boot() {
+  const s = await window.electronAPI.getSettings();
+  state.settings = s;
+  buildSpellKbGrid();
+  applySettingsToUI();
+})();
+</script>
+</body>
+</html>
